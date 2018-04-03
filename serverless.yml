@@ -30,12 +30,12 @@ resources:
       Properties:
         TableName: iousTable
         AttributeDefinitions:
-          - AttributeName: device_id_user_name
+          - AttributeName: device_id
             AttributeType: S
           - AttributeName: debitor
             AttributeType: S
         KeySchema:
-          - AttributeName: device_id_user_name
+          - AttributeName: device_id
             KeyType: HASH
           - AttributeName: debitor
             KeyType: RANGE
