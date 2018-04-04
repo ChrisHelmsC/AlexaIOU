@@ -14,7 +14,7 @@ package:
     - .git
 
 functions:
-  hello:
+  skillHandler:
     handler: src/index.handler
     events:
       - alexaSkill
@@ -28,16 +28,16 @@ resources:
     iousTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: iousTable
+        TableName: iouTable
         AttributeDefinitions:
           - AttributeName: device_id
             AttributeType: S
-          - AttributeName: debitor
+          - AttributeName: borrower
             AttributeType: S
         KeySchema:
           - AttributeName: device_id
             KeyType: HASH
-          - AttributeName: debitor
+          - AttributeName: borrower
             KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
