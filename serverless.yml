@@ -4,6 +4,7 @@ service: alexa-iou # NOTE: update this with your service name
 
 provider:
   name: aws
+  role: arn:aws:iam::983752327124:role/iou_lambda
   runtime: nodejs6.10
 
 package:
@@ -22,6 +23,7 @@ functions:
       versionFunctions: false
     environment:
       APP_ID: amzn1.ask.skill.e978bf26-b5d8-409c-a769-7c5e7ab608cf
+      IOU_TABLE: iouTable
 
 resources:
   Resources:
