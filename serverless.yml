@@ -34,12 +34,12 @@ resources:
         AttributeDefinitions:
           - AttributeName: device_id
             AttributeType: S
-          - AttributeName: borrower
+          - AttributeName: user_name
             AttributeType: S
         KeySchema:
           - AttributeName: device_id
             KeyType: HASH
-          - AttributeName: borrower
+          - AttributeName: user_name
             KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
