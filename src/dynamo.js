@@ -55,12 +55,13 @@ module.exports.addIouForUsers = (deviceId, borrower, creditor, amount, category)
 }
 
 /********************************************
-	addRoomate
+	addUser
 	Adds a new roomate for a specific ID to the 
 	IOU table.
 
 	@deviceId: device user is associated with
 	@roomate: name of user being added
+	@callback: function executed once user is added
 *********************************************/
 module.exports.addUser = (deviceId, user, callback) => {
 	//Create item representing new user, table params for new row
@@ -75,6 +76,13 @@ module.exports.addUser = (deviceId, user, callback) => {
 	docClient.put(params, callback);
 }
 
+/********************************************
+	getUser
+
+	@deviceId: device associated with user
+	@user: user's name on table
+	@callback: function for using data retrieved from table
+*********************************************/
 module.exports.getUser = (deviceId, user, callback) => {
 	//create item for selecting user
 	var paramsKey = {
