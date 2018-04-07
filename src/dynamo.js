@@ -10,7 +10,8 @@ const AWS = require('aws-sdk');
 	@borrower: user borrowing money
 	@creditor: user loaning money
 	@amount: amount owed
-	@category: what the money is owed for
+	@category: what the money is owed forfu
+	@callback: function that is executed when add succeeds
 *********************************************/
 module.exports.addIouForUsers = (deviceId, borrower, creditor, amount, category) => {
 
@@ -49,7 +50,7 @@ module.exports.addIouForUsers = (deviceId, borrower, creditor, amount, category)
   	docClient.batchWrite(params, function(err, data) {
   		if(err) {
   			console.error('Failed to insert new IOUs. JSON:', JSON.stringify(err, null, 2));
-  		}
+  		} 
   	});
 }
 
@@ -61,9 +62,9 @@ module.exports.addIouForUsers = (deviceId, borrower, creditor, amount, category)
 	@deviceId: device user is associated with
 	@roomate: name of user being added
 *********************************************/
-module.exports.addRoommate = (deviceId, roommate) => {
+module.exports.addUser = (deviceId, user, callback) => {
 	//Create item representing new user, table params for new row
-	var newUserItem = new Item(deviceId, roommate);
+	var newUserItem = new Item(deviceId, user);
 	var params = {
 		TableName: process.env.IOU_TABLE,
 		Item: newUserItem
@@ -71,11 +72,24 @@ module.exports.addRoommate = (deviceId, roommate) => {
 
 	//Insert into DB
 	var docClient = new AWS.DynamoDB.DocumentClient();
-	docClient.put(params, function(err, data) {
-		if(err) {
-			console.error('Could not insert new user. JSON: ', JSON.stringify(err, null, 2));
-		}
-	});
+	docClient.put(params, callback);
+}
+
+module.exports.getUser = (deviceId, user, callback) => {
+	//create item for selecting user
+	var paramsKey = {
+		device_id: deviceId,
+		user_name: user
+	}
+	var params = {
+		TableName: process.env.IOU_TABLE,
+		Key: paramsKey
+	}
+
+	//grab user from DB
+	var documentClient = new AWS.DynamoDB.DocumentClient();
+	console.log(params);
+	documentClient.get(params, callback);
 }
 
 /********************************************
