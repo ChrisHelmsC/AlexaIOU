@@ -30,9 +30,9 @@ module.exports.addIouForUsers = (deviceId, borrower, creditor, amount, category)
 	var creditorItem = new Item(deviceId, creditor, null, iou);
 
   	//create params and add to table
-  	var params = {
-  		RequestItems: new Object()
-  	}
+  	const params = {
+  		RequestItems: {}
+  	};
   	params.RequestItems[process.env.IOU_TABLE] = [
   		{
   			PutRequest: {
@@ -44,15 +44,11 @@ module.exports.addIouForUsers = (deviceId, borrower, creditor, amount, category)
   				Item: creditorItem
   			}
   		}
-  	]
+  	];
 
-  	var docClient = new AWS.DynamoDB.DocumentClient();
-  	docClient.batchWrite(params, function(err, data) {
-  		if(err) {
-  			console.error('Failed to insert new IOUs. JSON:', JSON.stringify(err, null, 2));
-  		} 
-  	});
-}
+  	const docClient = new AWS.DynamoDB.DocumentClient();
+  	return docClient.batchWrite(params).promise();
+};
 
 /********************************************
 	addUser
@@ -63,18 +59,18 @@ module.exports.addIouForUsers = (deviceId, borrower, creditor, amount, category)
 	@roomate: name of user being added
 	@callback: function executed once user is added
 *********************************************/
-module.exports.addUser = (deviceId, user, callback) => {
+module.exports.addUser = (deviceId, user) => {
 	//Create item representing new user, table params for new row
-	var newUserItem = new Item(deviceId, user);
-	var params = {
+	const newUserItem = new Item(deviceId, user);
+	const params = {
 		TableName: process.env.IOU_TABLE,
 		Item: newUserItem
-	}
+	};
 
 	//Insert into DB
-	var docClient = new AWS.DynamoDB.DocumentClient();
-	docClient.put(params, callback);
-}
+	const docClient = new AWS.DynamoDB.DocumentClient();
+	return docClient.put(params).promise();
+};
 
 /********************************************
 	getUser
@@ -83,22 +79,21 @@ module.exports.addUser = (deviceId, user, callback) => {
 	@user: user's name on table
 	@callback: function for using data retrieved from table
 *********************************************/
-module.exports.getUser = (deviceId, user, callback) => {
+module.exports.getUser = (deviceId, user) => {
 	//create item for selecting user
-	var paramsKey = {
+	const paramsKey = {
 		device_id: deviceId,
 		user_name: user
-	}
-	var params = {
+	};
+	const params = {
 		TableName: process.env.IOU_TABLE,
 		Key: paramsKey
-	}
+	};
 
 	//grab user from DB
-	var documentClient = new AWS.DynamoDB.DocumentClient();
-	console.log(params);
-	documentClient.get(params, callback);
-}
+	const documentClient = new AWS.DynamoDB.DocumentClient();
+	return documentClient.get(params).promise();
+};
 
 /********************************************
 	Item()

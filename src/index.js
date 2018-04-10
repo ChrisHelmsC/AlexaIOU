@@ -6,61 +6,50 @@ const APP_ID = process.env.APP_ID;
 const handlers = {
   'LaunchRequest': function() {
     this.emit(':tell', 'Welcome to the I O U skill');
-  }, 'Unhandled': function() {
+  },
+  'Unhandled': function() {
+    console.error(this.event);
     this.emit(':ask', 'Unhandled intent requested');
   },
   'AddDebtIntent': function() {
-    this.emit(':tell', 'Adding debt');
-
     //Grab information from intent request
-    var deviceId = this.event.context.System.device.deviceId;
-    var slots = this.event.request.intent.slots;
-    var creditor = slots.Creditor.value;
-    var borrower = slots.Borrower.value;
-    var amount = slots.Amount.value;
-    var category = slots.Category.value;
+    const deviceId = this.event.context.System.device.deviceId;
+    const slots = this.event.request.intent.slots;
+    const creditor = slots.Creditor.value;
+    const borrower = slots.Borrower.value;
+    const amount = slots.Amount.value;
+    const category = slots.Category.value;
 
     //add IOU for both users
-    dynamo.addIouForUsers(deviceId, borrower, creditor, amount, category);
+    dynamo.addIouForUsers(deviceId, borrower, creditor, amount, category)
+      .then((data) => {
+        this.emit(':tell', 'Adding debt');
+      })
+      .catch((err) => {
+        this.emit(':tell', 'Sorry, I was unable to complete that request');
+      });
   },
   'AddRoommateIntent': function() {
+    const deviceId = this.event.context.System.device.deviceId;
+    const roommate =  this.event.request.intent.slots.Roommate.value;
+    const alexa = this;
 
-    var deviceId = this.event.context.System.device.deviceId;
-    var roommate =  this.event.request.intent.slots.Roommate.value;
-    var alexa = this;
-
-    /*Callback for get user function. If user cannot be found, newuser is added.
-      If user is found, do not add new user and let user know they already exist.*/
-    function getUserCallback(err, data) {
-      if(err) {
-        console.error('Unable to get roomate. JSON: ', JSON.stringify(err, null, 2));
-        alexa.emit(':tell', 'Sorry, I was unable to complete that request');
-      } else {
-        //If data object is empty, we can safely add the new user, otherwise report error
-        if(data) {
-          if(Object.keys(data).length > 0) {
-            alexa.emit(':tell', 'I could not add that user because they already exist on this device');
-          } else {
-            //If user cannot be found in table, add them
-            function addUserCallback(err, data) {
-              if(err) {
-                console.error('Could not insert new user. JSON: ', JSON.stringify(err, null, 2));
-                alexa.emit(':tell', 'Sorry, I was unable to complete that request');
-              } else  {
-                alexa.emit(':tell', `I have added ${roommate} as a user on this device.`);
-                console.log(data);
-              }
-            }
-
-            dynamo.addUser(deviceId, roommate, addUserCallback);
-          }
+    dynamo.getUser(deviceId, roommate)
+      .then((user) => {
+        if(Object.keys(user).length > 0) {
+          return Promise.reject(new Error('too many keys: ' + JSON.stringify(user)));
         } else {
-          alexa.emit(':tell', 'Sorry, I was unable to complete that request');
+          // if user cannot be found in table, add them
+          return dynamo.addUser(deviceId, roommate);
         }
-      }
-    }
-
-    dynamo.getUser(deviceId, roommate, getUserCallback);
+      })
+      .then((data) => {
+        alexa.emit(':tell', `I have added ${roommate} as a user on this device.`);
+      })
+      .catch((err) => {
+        console.error(err);
+        alexa.emit(':tell', `${roommate} is already a user on this device`);
+      });
   }
 };
 
@@ -70,7 +59,3 @@ module.exports.handler = (event, context, callback) => {
   alexa.registerHandlers(handlers);
   alexa.execute();
 };
-
-function isEmpty() {
-
-}
