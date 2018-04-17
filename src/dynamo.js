@@ -11,78 +11,76 @@ const AWS = require('aws-sdk');
 	@creditor: user loaning money
 	@amount: amount owed
 	@category: what the money is owed for
-	@callback: function that is executed when add succeeds
 *********************************************/
 module.exports.addIouForUsers = (deviceId, borrower, creditor, amount, category) => {
 
-	//Get referenced users from iou table
-	return module.exports.getUser(deviceId, borrower).then((data) => {
-		const borrowerItem = data.Item;
-		console.log(borrowerItem);
+	// Get referenced users from iou table
+	return Promise.all(
+		module.exports.getUser(deviceId, borrower),
+		module.exports.getUser(deviceId, creditor)
+	)
+	.then((data) => {
+		const borrowerItem = data[0].Item;
+		const creditorItem = data[1].Item;
 		if (!borrowerItem) {
 			var borrowerError = new Error('Unable to get requested borrower.');
 			borrowerError.alexaMessage = `${borrower} is not currently a user for this device.`;
 			return Promise.reject(borrowerError);
 		}
+		if(!creditorItem) {
+			var creditorError = new Error('Unable to get requested creditor.');
+			creditorError.alexaMessage = `${creditor} is not currently a user for this device.`;
+			return Promise.reject(creditorError);
+		}
 
-		return module.exports.getUser(deviceId, creditor).then((data) => {
-			const creditorItem = data.Item;
-			if(!creditorItem) {
-				var creditorError = new Error('Unable to get requested creditor.');
-				creditorError.alexaMessage = `${creditor} is not currently a user for this device.`;
-				return Promise.reject(creditorError);
-			}
+		// format amount as USD, create iou
+		const formattedAmount = Number(parseFloat(amount).toFixed(2));
+		const iou = {
+			amount: formattedAmount,
+			created: new Date(Date.now()).toLocaleString(),
+			paid: false
+		}
 
-			//format amount as USD, create iou
-			var formattedAmount = Number(parseFloat(amount).toFixed(2));
-			const iou = {
-		        amount: formattedAmount,
-		        created: new Date(Date.now()).toLocaleString(),
-		        paid: false
-	    	}
-
-	    	//Add item to borrower and creditors rows
-			if(creditor in borrowerItem.borrowed) {
-				if(category in borrowerItem.borrowed[creditor]) {
-					/*User already owes/credits for this category,
-					  add new amount owed/borrowed
-					 */
-					 borrowerItem.borrowed[creditor][category].amount += formattedAmount;
-					 creditorItem.credited[borrower][category].amount += formattedAmount;
-				} else {
-					//Users do not currently have an iou for this category
-					borrowerItem.borrowed[creditor][category] = iou;
-					creditorItem.credited[borrower][category] = iou;
-				}
+		// Add item to borrower and creditors rows
+		if(creditor in borrowerItem.borrowed) {
+			if(category in borrowerItem.borrowed[creditor]) {
+				// User already owes/credits for this category,
+				// add new amount owed/borrowed
+				 borrowerItem.borrowed[creditor][category].amount += formattedAmount;
+				 creditorItem.credited[borrower][category].amount += formattedAmount;
 			} else {
-				//Users do not yet have any ious between them
-				borrowerItem.borrowed[creditor] = new Object();
+				// Users do not currently have an iou for this category
 				borrowerItem.borrowed[creditor][category] = iou;
-				creditorItem.credited[borrower] = new Object();
 				creditorItem.credited[borrower][category] = iou;
 			}
+		} else {
+			// Users do not yet have any ious between them
+			borrowerItem.borrowed[creditor] = new Object();
+			borrowerItem.borrowed[creditor][category] = iou;
+			creditorItem.credited[borrower] = new Object();
+			creditorItem.credited[borrower][category] = iou;
+		}
 
-			//create params and add to table
-		  	const params = {
-		  		RequestItems: {}
-		  	};
-		  	params.RequestItems[process.env.IOU_TABLE] = [
-		  		{
-		  			PutRequest: {
-		  				Item: borrowerItem
-		  			}
-		  		},
-		  		{
-		  			PutRequest: {
-		  				Item: creditorItem
-		  			}
-		  		}
-		  	];
+		// create params and add to table
+		  const params = {
+			  RequestItems: {}
+		  };
+		  params.RequestItems[process.env.IOU_TABLE] = [
+			  {
+				  PutRequest: {
+					  Item: borrowerItem
+				  }
+			  },
+			  {
+				  PutRequest: {
+					  Item: creditorItem
+				  }
+			  }
+		  ];
 
-		  	const docClient = new AWS.DynamoDB.DocumentClient();
-		  	return docClient.batchWrite(params).promise();
-		})
-	})
+		  const docClient = new AWS.DynamoDB.DocumentClient();
+		  return docClient.batchWrite(params).promise();
+	});
 };
 
 /********************************************
