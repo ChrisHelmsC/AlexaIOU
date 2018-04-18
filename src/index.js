@@ -150,7 +150,6 @@ const handlers = {
       //User exists, check for IOUs
       const numCreditors = Object.keys(userItem.borrowed).length;
       if(numCreditors == 0) {
-        console.log('1');
         //user owes nothing
         alexa.emit(':tell', `${borrower} has IOUs at this time.`);
         return Promise.resolve(`${borrower} owes no money at this time.`);
@@ -165,14 +164,12 @@ const handlers = {
           }
           var result = getCreditorString(userItem.borrowed, creditorName);
           if(result) {
-            console.log(` 3: ` + JSON.stringify(result));
             alexaTellString += `${creditorName} ${result.total} dollars, `;
             totalOwed += result.total;
           }
         }  
 
         //If total is zero, user owes nothing
-        console.log('2');
         if(totalOwed <= 0) {
           alexa.emit(':tell', `${borrower} has no IOUs at this time.`);
           return Promise.resolve(`${borrower} owes no money at this time.`);
@@ -183,6 +180,8 @@ const handlers = {
         alexa.emit(':tell', alexaTellString + totalTellString);
         return Promise.resolve(totalTellString);
       }
+    }).catch((err) => {
+      console.error(err);
     });
   }
 };
@@ -208,7 +207,6 @@ module.exports.handler = (event, context, callback) => {
 **********************************************/
 function getCreditorString(borrowed, creditorName) {
   if(!borrowed || !creditorName || !borrowed[creditorName]) {
-    console.log('4');
     return null;
   }
 
@@ -220,17 +218,14 @@ function getCreditorString(borrowed, creditorName) {
       var amount = itemsOwed[categoryName].amount;
       total += amount;
       alexaTellString += `${amount} for ${categoryName}, `;
-      console.log('5: ' + amount);
     }
   }
 
   //If no total, user has paid all debts to creditor
   if(total == 0) {
-    console.log('6');
     return null;
   }
 
-  console.log('total: ' + total);
   const result = {
     total: total,
     tellString: alexaTellString
