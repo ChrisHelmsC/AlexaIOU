@@ -71,10 +71,10 @@ const handlers = {
     const alexa = this;
 
     //Check if both users exist for the given device
-    Promise.all(
+    Promise.all([
       dynamo.getUser(deviceId, borrower),
       dynamo.getUser(deviceId, creditor)
-    )
+    ])
       .then((users) => {
         const borrowerItem = users[0].Item;
         const creditorItem = users[1].Item;
@@ -107,6 +107,9 @@ const handlers = {
               emitString += `${amount} dollars for ${propertyName} `;
             } else {
               for (var propertyName in creditorUserIouItem) {
+                if(propertyName == Object.keys(creditorUserIouItem)[Object.keys(creditorUserIouItem).length-1]) {
+                  emitString += ` and `;
+                }
                 var amount = creditorUserIouItem[propertyName].amount;
                 totalAmount += amount;
                 emitString += `${amount} dollars for ${propertyName}, `;
@@ -129,6 +132,58 @@ const handlers = {
       .catch((err) => {
         console.error(err);
       });
+  },
+  'OweEveryoneIntent': function () {
+    const deviceId = this.event.context.System.device.deviceId;
+    const slots = this.event.request.intent.slots;
+    const borrower = slots.Borrower.value;
+    const alexa = this;
+
+    //ensure borrower is a user on this device
+    dynamo.getUser(deviceId, borrower).then((user) => {
+      const userItem = user.Item;
+      if(!userItem) {
+        alexa.emit(':tell', `${borrower} does not exist on this device.`);
+        return Promise.reject(new Error(`Borrower=${borrower} did not exist on device.`));
+      }
+       
+      //User exists, check for IOUs
+      const numCreditors = Object.keys(userItem.borrowed).length;
+      if(numCreditors == 0) {
+        console.log('1');
+        //user owes nothing
+        alexa.emit(':tell', `${borrower} has IOUs at this time.`);
+        return Promise.resolve(`${borrower} owes no money at this time.`);
+      } else {
+
+        var alexaTellString = `${borrower} owes `;
+        var totalOwed = 0;
+        for(var creditorName in userItem.borrowed) {
+          //prepend 'and' to last part of tell string if last creditor
+          if(creditorName == Object.keys(userItem.borrowed)[Object.keys(userItem.borrowed).length-1]) {
+            alexaTellString += ` and `;
+          }
+          var result = getCreditorString(userItem.borrowed, creditorName);
+          if(result) {
+            console.log(` 3: ` + JSON.stringify(result));
+            alexaTellString += `${creditorName} ${result.total} dollars, `;
+            totalOwed += result.total;
+          }
+        }  
+
+        //If total is zero, user owes nothing
+        console.log('2');
+        if(totalOwed <= 0) {
+          alexa.emit(':tell', `${borrower} has no IOUs at this time.`);
+          return Promise.resolve(`${borrower} owes no money at this time.`);
+        }
+        
+        //Otherwise, add total to string and emit response
+        const totalTellString = `coming to a total of ${totalOwed} dollars.`;
+        alexa.emit(':tell', alexaTellString + totalTellString);
+        return Promise.resolve(totalTellString);
+      }
+    });
   }
 };
 
@@ -138,3 +193,56 @@ module.exports.handler = (event, context, callback) => {
   alexa.registerHandlers(handlers);
   alexa.execute();
 };
+
+/*********************************************
+  getCreditorString
+  returns tuple consisting of a string used 
+  for Alexa to tell the user about what they 
+  owe a certain creditor, and the total they owe
+  that creditor.
+
+  @borrowed : borrower's borrowed attribute
+    EX: user.Item.borrowed
+  @creditorName : creditor for string to be created for
+    EX: 'Chris'
+**********************************************/
+function getCreditorString(borrowed, creditorName) {
+  if(!borrowed || !creditorName || !borrowed[creditorName]) {
+    console.log('4');
+    return null;
+  }
+
+  var alexaTellString = `${creditorName} `;
+  var itemsOwed = borrowed[creditorName];
+  var total = 0;
+  for(var categoryName in itemsOwed) {
+    if(!itemsOwed[categoryName].paid) {
+      var amount = itemsOwed[categoryName].amount;
+      total += amount;
+      alexaTellString += `${amount} for ${categoryName}, `;
+      console.log('5: ' + amount);
+    }
+  }
+
+  //If no total, user has paid all debts to creditor
+  if(total == 0) {
+    console.log('6');
+    return null;
+  }
+
+  console.log('total: ' + total);
+  const result = {
+    total: total,
+    tellString: alexaTellString
+  }
+
+  console.log(JSON.stringify(result));
+
+  return result;
+}
+
+
+
+
+
+

@@ -15,10 +15,10 @@ const AWS = require('aws-sdk');
 module.exports.addIouForUsers = (deviceId, borrower, creditor, amount, category) => {
 
 	// Get referenced users from iou table
-	return Promise.all(
+	return Promise.all([
 		module.exports.getUser(deviceId, borrower),
 		module.exports.getUser(deviceId, creditor)
-	)
+	])
 	.then((data) => {
 		const borrowerItem = data[0].Item;
 		const creditorItem = data[1].Item;
