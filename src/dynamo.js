@@ -130,6 +130,52 @@ module.exports.getUser = (deviceId, user) => {
 	return documentClient.get(params).promise();
 };
 
+module.exports.putListOfUsers = (deviceId, userArray) => {
+	if(!deviceId || !userArray) {
+		return null;
+	}
+
+	const params = {
+		RequestItems: {}
+	};
+	var putItemsHere = params.RequestItems[process.env.IOU_TABLE] = [];
+
+	userArray.forEach(function(userItem) {
+		putItemsHere.push({
+			PutRequest: {
+				Item: userItem
+			}
+		});
+	})
+
+	const docClient = new AWS.DynamoDB.DocumentClient();
+	return docClient.batchWrite(params).promise();
+}
+
+module.exports.getListOfUsers = (deviceId, userArray) => {
+	if(!deviceId || !userArray) {
+		return null;
+	}
+
+	const params = {
+		RequestItems: {}
+	};
+	params.RequestItems[process.env.IOU_TABLE] = {};
+	var keys = params.RequestItems[process.env.IOU_TABLE]['Keys'] = [];
+
+	userArray.forEach(function(user) {
+		keys.push({
+			device_id: deviceId,
+			user_name: user
+		});
+	});
+
+	console.log(JSON.stringify(keys));
+
+	const documentClient = new AWS.DynamoDB.DocumentClient();
+	return documentClient.batchGet(params).promise(); 
+}
+
 /********************************************
 	Item()
 	creates an Item object representing a row
