@@ -5,7 +5,7 @@ service: alexa-iou # NOTE: update this with your service name
 provider:
   name: aws
   role: arn:aws:iam::983752327124:role/iou_lambda
-  runtime: nodejs6.10
+  runtime: nodejs8.10
 
 package:
   include:

@@ -1,71 +1,50 @@
 module.exports.getUnpayedDebtsForCreditor =  (creditorName) => {
 	if(!creditorName) {
 		return null;
+	} else {
+		return Object.entries(creditorName).filter(category => !category.paid);
 	}
-
-	var unpayedDebts = {};
-	for(var category in creditorName) {
-		if(!creditorName[category].paid) {
-			unpayedDebts[category] = creditorName[category];
-		}
-	}
-
-	return unpayedDebts;
 }
 
 module.exports.getCreditorsAndUnpayedDebts = (borrowedList) => {
-	if(!borrowedList) {
+	if (!borrowedList) {
 		return null;
+	} else {
+		return Object.entries(borrowedList)
+			.map(module.exports.getUnpayedDebtsForCreditor)
+			.filter(unpaid => Object.keys(unpaid).length > 0);
 	}
-
-	const creditorsAndUnpayedDebts = {};
-	for(var creditor in borrowedList) {
-		var unpayedDebts = module.exports.getUnpayedDebtsForCreditor(borrowedList[creditor]);
-		if(Object.keys(unpayedDebts).length > 0) {
-			creditorsAndUnpayedDebts[creditor] = module.exports.getUnpayedDebtsForCreditor(borrowedList[creditor]);
-		}
-	}
-
-	return creditorsAndUnpayedDebts;
 }
 
-module.exports.getTotalUnpayedFromDebts =  (debts) => {
-	var total = 0;
-	if(debts) {
-		for(var iou in debts) {
-			total += debts[iou].amount;
-		}
-	}
-	return total;
+module.exports.getTotalUnpayedFromDebts = (debts) => {
+	return debts ? debts.reduce((a,c) => a + c, 0) : 0;
 }
 
-module.exports.payOffDebt =  (debt) => {
-	if(debt) {
-		if(!debt.paid) {
-			debt.paid = true;
-			return debt.amount;
-		}
+module.exports.payOffDebt = (debt) => {
+	if (debt && !debt.paid) {
+		debt.paid = true;
+		return debt.amount;
+	} else {
+		return 0;
 	}
-	return 0;
 }
 
 module.exports.payOffDebts = (debts) => {
-	var total = 0;
-	if(debts) {
-		for(var debt in debts) {
-			if(!debts[debt].paid) {
-				debts[debt].paid = true;
-				total += debts[debt].amount;
-			}
-		}
+	if (debts) {
+		return debts.filter(debt => !debt.paid)
+			.reduce((total, debt) => {
+				debt.paid = true;
+				return total + debt.amount;
+			}, 0);
+	} else {
+		return 0;
 	}
-	return total;
 }
 
 module.exports.payOffAllCreditors = (borrower, userRowList) => {
 	if(userRowList) {
 		console.log('Yes user row list');
-		userRowList.forEach(function(userRow) {
+		userRowList.forEach((userRow) => {
 			const loanedBorrower = userRow.credited[borrower];
 			console.log('loaned borrower' + JSON.stringify(loanedBorrower));
 			module.exports.payOffDebts(loanedBorrower);
