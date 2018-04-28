@@ -1,9 +1,16 @@
 module.exports.getUnpayedDebtsForCreditor =  (creditorName) => {
 	if(!creditorName) {
 		return null;
-	} else {
-		return Object.entries(creditorName).filter(category => !category.paid);
 	}
+
+	var unpayedDebts = {};
+	for(var category in creditorName) {
+		if(!creditorName[category].paid) {
+			unpayedDebts[category] = creditorName[category];
+		}
+	}
+
+	return unpayedDebts;
 }
 
 module.exports.getCreditorsAndUnpayedDebts = (borrowedList) => {

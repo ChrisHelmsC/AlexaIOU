@@ -16,8 +16,8 @@ const handlers = {
     //Grab information from intent request
     const deviceId = this.event.context.System.device.deviceId;
     const slots = this.event.request.intent.slots;
-    const creditor = slots.Creditor.value;
-    const borrower = slots.Borrower.value;
+    const creditor = slots.Creditor.value.toLowerCase();
+    const borrower = slots.Borrower.value.toLowerCase();
     const amount = slots.Amount.value;
     const category = slots.Category.value;
 
@@ -37,7 +37,7 @@ const handlers = {
   },
   'AddRoommateIntent': function () {
     const deviceId = this.event.context.System.device.deviceId;
-    const roommate = this.event.request.intent.slots.Roommate.value;
+    const roommate = this.event.request.intent.slots.Roommate.value.toLowerCase();
     const alexa = this;
 
     dynamo.getUser(deviceId, roommate)
@@ -66,10 +66,11 @@ const handlers = {
   'OweRoomateIntent': function () {
     const deviceId = this.event.context.System.device.deviceId;
     const slots = this.event.request.intent.slots;
-    const creditor = slots.Creditor.value;
-    const borrower = slots.Borrower.value;
+    const creditor = slots.Creditor.value.toLowerCase();
+    const borrower = slots.Borrower.value.toLowerCase();
     const category = slots.Category.value;
     const alexa = this;
+    console.log(`category value ${category}`)
 
     //Check if both users exist for the given device
     Promise.all([
@@ -79,7 +80,7 @@ const handlers = {
     .then((users) => {
       const borrowerItem = users[0].Item;
       const creditorItem = users[1].Item;
-      if (!borrowerItem && !creditorItem) {
+      /*if (!borrowerItem && !creditorItem) {
         alexa.emit(':tell', `${borrower} and ${creditor} do not exist on this device.`);
         return Promise.reject(new Error(`Borrower=${borrower} and Creditor=${creditor} do not exist on device.`));
       } else if (!borrowerItem) {
@@ -88,15 +89,17 @@ const handlers = {
       } else if (!creditorItem) {
         alexa.emit(':tell', `${creditor} does not exist on this device.`);
         return Promise.reject(new Error(`Creditor=${creditor} did not exist on device.`));
-      }
+      }*/
 
       const creditorUserIouItem = borrowerItem.borrowed[creditor];
       if (creditorUserIouItem) {
           //Borrower owes creditor something
           console.log('Item between parties is found');
+          console.log(`Category is ${category} just before check`)
           if (category) {
+            console.log('category: ' + JSON.stringify(category));
             if(creditorUserIouItem[category] && !creditorUserIouItem[category].paid) {
-              console.log('category: ' + JSON.stringify(category));
+              console.log('category is not paid off');
               const amount = creditorUserIouItem[category].amount;
               alexa.emit(':tell', `${borrower} owes ${creditor} ${amount} dollars for ${category}.`);
               Promise.resolve(`${borrower} owes ${creditor} ${amount} dollars for ${category}.`);
@@ -111,12 +114,14 @@ const handlers = {
 
             //Special wording for only owing one item
             if (Object.keys(creditorUserIouItem).length == 1) {
+              console.log('Only one item');
               var propertyName = Object.keys(creditorUserIouItem)[0];
               if(!creditorUserIouItem[propertyName].paid) {
                 totalAmount = creditorUserIouItem[propertyName].amount;
                 emitString += `${totalAmount} dollars for ${propertyName} `;
               }
             } else {
+              console.log('multiple items');
               const unpayedDebts = helper.getUnpayedDebtsForCreditor(creditorUserIouItem);
               for (var category in unpayedDebts) {
                 if(category == Object.keys(unpayedDebts)[Object.keys(unpayedDebts).length-1]
@@ -124,12 +129,14 @@ const handlers = {
                   emitString += ` and `;
               }
               var amount = unpayedDebts[category].amount;
+              console.log(`amount is ${amount}`);
               totalAmount += amount;
               emitString += `${amount} dollars for ${category}, `;
             }
             emitString += `giving a grand total of ${totalAmount} dollars owed.`;
           }
 
+          console.log(`total amount: ${totalAmount}`)
           if(totalAmount > 0) {
             alexa.emit(`:tell`, emitString);
             return Promise.resolve(emitString)
@@ -154,7 +161,7 @@ const handlers = {
   'OweEveryoneIntent': function () {
     const deviceId = this.event.context.System.device.deviceId;
     const slots = this.event.request.intent.slots;
-    const borrower = slots.Borrower.value;
+    const borrower = slots.Borrower.value.toLowerCase();
     const alexa = this;
 
     //ensure borrower is a user on this device
@@ -209,8 +216,8 @@ const handlers = {
   'PayOffDebtIntent': function() {
     const deviceId = this.event.context.System.device.deviceId;
     const slots = this.event.request.intent.slots;
-    const creditor = slots.Creditor.value;
-    const borrower = slots.Borrower.value;
+    const creditor = slots.Creditor.value.toLowerCase();
+    const borrower = slots.Borrower.value.toLowerCase();
     const category = slots.Category.value;
     const alexa = this;
 
