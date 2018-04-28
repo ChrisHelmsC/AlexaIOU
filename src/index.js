@@ -24,7 +24,7 @@ const handlers = {
     //add IOU for both users
     dynamo.addIouForUsers(deviceId, borrower, creditor, amount, category)
     .then((data) => {
-      this.emit(':tell', 'Okay, I have added that I O U');
+      this.emit(':tell', `Okay, I have added that ${borrower} owes ${creditor} ${amount} dollars for ${category}`);
     })
     .catch((err) => {
       console.log(err);
