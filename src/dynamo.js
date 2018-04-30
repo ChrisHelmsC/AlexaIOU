@@ -176,6 +176,23 @@ module.exports.getListOfUsers = (deviceId, userArray) => {
 	return documentClient.batchGet(params).promise(); 
 }
 
+module.exports.getUsersForDevice = (deviceId) => {
+	if (!deviceId) {
+		return Promise.reject('no device id');
+	}
+	const params = {
+		RequestItems: {
+		}
+	};
+	params.RequestItems[process.env.IOU_TABLE] = {
+		'Keys': [{
+			device_id: deviceId
+		}]
+	};
+	console.log(JSON.stringify(params));
+	return new AWS.DynamoDB.DocumentClient().batchGet(params).promise();
+};
+
 /********************************************
 	Item()
 	creates an Item object representing a row
