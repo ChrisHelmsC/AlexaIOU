@@ -1,6 +1,6 @@
 # serverless.yml
 
-service: alexa-iou # NOTE: update this with your service name
+service: alexa-iou
 
 provider:
   name: aws
@@ -13,6 +13,10 @@ package:
   exclude:
     - .serverless
     - .git
+    - images
+    - test
+    - package.json
+    - package-lock.json
 
 functions:
   skillHandler:
