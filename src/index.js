@@ -6,11 +6,11 @@ const APP_ID = process.env.APP_ID;
 
 const handlers = {
   'LaunchRequest': function () {
-    this.emit(':tell', 'Welcome to the I O U skill. You can begin by adding users to this device.');
+    this.emit(':ask', 'Welcome to the I O U skill. You can begin by adding users to this device.');
   },
   'Unhandled': function () {
     console.error(this.event);
-    this.emit(':ask', 'Unhandled intent requested');
+    this.emit(':tell', 'Unhandled intent requested');
   },
   'SplitPayment': function () {
     const deviceId = this.event.context.System.device.deviceId;

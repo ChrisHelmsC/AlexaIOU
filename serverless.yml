@@ -18,7 +18,7 @@ functions:
   skillHandler:
     handler: src/index.handler
     events:
-      - alexaSkill
+      - alexaSkill: amzn1.ask.skill.e978bf26-b5d8-409c-a769-7c5e7ab608cf
     provider:
       versionFunctions: false
     environment:
