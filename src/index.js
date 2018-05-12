@@ -12,9 +12,6 @@ const handlers = {
     console.error(this.event);
     this.emit(':tell', 'Unhandled intent requested');
   },
-  'HelpRequest': function () {
-    this.emit(':tell', 'Welcome to the I O U skill. You can begin by adding users to this device by telling IOU to add a user. An DEBT can be added by telling IOU to add a debt between two users for a certain amount of money, and what the debt is for. An example would be "Alexa, tell IOU that Chris owes Alex five dollars for coffee. Once debts are stored, IOU can repeat the debt back to the users, list off the total amount a user owes, or allow users to mark debts as payed off.');
-  },
   'SplitPayment': function () {
     const deviceId = this.event.context.System.device.deviceId;
     const slots = this.event.request.intent.slots;
