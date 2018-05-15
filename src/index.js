@@ -6,7 +6,9 @@ const APP_ID = process.env.APP_ID;
 
 const handlers = {
   'LaunchRequest': function () {
-    this.emit(':ask', 'Welcome to the I O U skill. This skill can be used for keeping track of your debts and IOUs.');
+    var cardTitle = 'Privacy Policy Link';
+    var cardContent = 'https://ssolkhan.github.io/IOUPrivacyPolicy.txt';
+    this.emit(':askWithCard', 'Welcome to the IOU skill. This skill can be used for keeping track of your debts and IOUs. You can add users which IOU will remember. Debts or loans can be added for each user. IOU can recite any pending debts for a specific user or category. When the debt has been paid off, IOU will mark the debt as paid and will no longer list the debt when a user asks what they owe.', '', cardTitle, cardContent);
   },
   'Unhandled': function () {
     console.error(this.event);
