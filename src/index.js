@@ -489,10 +489,12 @@ function getCreditorString(borrowed, creditorName) {
  * @param {*} alexa 
  */
 function checkSlot(slot, errMsg, alexa) {
+  console.log("checking slot: " + slot);
   if (slot && slot.value) {
     return false;
   } else {
-    alexa.emit(':tell', errMsg);
+    alexa.emit(':ask', errMsg);
+    console.error("Invalid slot: " + slot);
     return true;
   }
 }
