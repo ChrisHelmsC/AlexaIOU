@@ -6,12 +6,15 @@ const APP_ID = process.env.APP_ID;
 
 const handlers = {
   'LaunchRequest': function () {
-    this.emit(':ask', 'Welcome to the I O U skill. You can begin by adding users to this device by telling IOU to add a user. A debt can be added by telling IOU to add a debt between two users for a certain amount of money, and what the debt is for. An example would be "Alexa, tell IOU that Chris owes Alex five dollars for coffee. Once debts are stored, IOU can repeat the debt back to the users, list off the total amount a user owes, or allow users to mark debts as payed off.');
+    this.emit(':ask', 'Welcome to the I O U skill. This skill can be used for keeping track of your debts and IOUs.');
   },
   'Unhandled': function () {
     console.error(this.event);
     this.emit(':tell', 'Unhandled intent requested');
   },
+  'AMAZON.HelpIntent': function () {
+    this.emit(':ask', 'You can begin by adding users to this device by telling IOU to add a user. A debt can be added by telling IOU to add a debt between two users for a certain amount of money, and what the debt is for. An example would be "Alexa, tell IOU that Chris owes Alex five dollars for coffee. Once debts are stored, IOU can repeat the debt back to the users, list off the total amount a user owes, or allow users to mark debts as payed off. What would you like to do?');
+  }, 
   'SplitPayment': function () {
     const deviceId = this.event.context.System.device.deviceId;
     const slots = this.event.request.intent.slots;
