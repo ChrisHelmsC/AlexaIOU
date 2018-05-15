@@ -13,14 +13,19 @@ const handlers = {
   },
   'Unhandled': function () {
     console.error(this.event);
-    this.emit(':tell', 'Unhandled intent requested');
+    this.emit(':tell', 'Sorry, I don\'t know that');
   },
   'AMAZON.HelpIntent': function () {
-    this.emit(':ask', 'You can begin by adding users to this device by telling IOU to add a user. A debt can be added by telling IOU to add a debt between two users for a certain amount of money, and what the debt is for. An example would be "Alexa, tell IOU that Chris owes Alex five dollars for coffee. Once debts are stored, IOU can repeat the debt back to the users, list off the total amount a user owes, or allow users to mark debts as payed off. What would you like to do?');
+    this.emit(':ask', 'You can begin by adding users to this device by telling I O U to add a user. A debt can be added by telling IOU to add a debt between two users for a certain amount of money, and what the debt is for. An example would be "Alexa, tell IOU that Chris owes Alex five dollars for coffee. Once debts are stored, IOU can repeat the debt back to the users, list off the total amount a user owes, or allow users to mark debts as payed off. What would you like to do?');
   }, 
   'SplitPayment': function () {
     const deviceId = this.event.context.System.device.deviceId;
     const slots = this.event.request.intent.slots;
+
+    if (checkSlot(slots.Creditor, 'You must specify a creditor.', this)) return;
+    if (checkSlot(slots.Amount, 'You must specify an amount owed.', this)) return;
+    if (checkSlot(slots.Category, 'You must specify a category.', this)) return;
+
     const creditor = slots.Creditor.value.toLowerCase();
     const amount = slots.Amount.value;
     const category = slots.Category.value;
@@ -47,6 +52,12 @@ const handlers = {
     //Grab information from intent request
     const deviceId = this.event.context.System.device.deviceId;
     const slots = this.event.request.intent.slots;
+
+    if (checkSlot(slots.Creditor, 'You must specify a creditor.', this)) return;
+    if (checkSlot(slots.Borrower, 'You must specify a borrower.', this)) return;
+    if (checkSlot(slots.Amount, 'You must specify an amount owed.', this)) return;
+    if (checkSlot(slots.Category, 'You must specify a category.', this)) return;
+
     const creditor = slots.Creditor.value.toLowerCase();
     const borrower = slots.Borrower.value.toLowerCase();
     const amount = slots.Amount.value;
@@ -68,6 +79,9 @@ const handlers = {
   },
   'AddRoommateIntent': function () {
     const deviceId = this.event.context.System.device.deviceId;
+
+    if (checkSlot(this.event.request.intent.slots.Roommate, 'You must tell me the user\'s name to add.')) return;
+
     const roommate = this.event.request.intent.slots.Roommate.value.toLowerCase();
     const alexa = this;
 
@@ -97,6 +111,11 @@ const handlers = {
   'OweRoomateIntent': function () {
     const deviceId = this.event.context.System.device.deviceId;
     const slots = this.event.request.intent.slots;
+
+    if (checkSlot(slots.Creditor, 'You must specify a creditor.', this)) return;
+    if (checkSlot(slots.Borrower, 'You must specify a borrower.', this)) return;
+    if (checkSlot(slots.Category, 'You must specify a category.', this)) return;
+
     const creditor = slots.Creditor.value ? slots.Creditor.value.toLowerCase() : slots.Creditor.value;
     const borrower = slots.Borrower.value ? slots.Borrower.value.toLowerCase() : slots.Borrower.value;
     const category = slots.Category.value;
@@ -192,6 +211,9 @@ const handlers = {
   'OweEveryoneIntent': function () {
     const deviceId = this.event.context.System.device.deviceId;
     const slots = this.event.request.intent.slots;
+
+    if (checkSlot(slots.Borrower, 'You must specify a borrower.', this)) return;
+
     const borrower = slots.Borrower.value.toLowerCase();
     const alexa = this;
 
@@ -247,6 +269,11 @@ const handlers = {
   'PayOffDebtIntent': function () {
     const deviceId = this.event.context.System.device.deviceId;
     const slots = this.event.request.intent.slots;
+
+    if (checkSlot(slots.Creditor, 'You must specify a creditor.', this)) return;
+    if (checkSlot(slots.Borrower, 'You must specify a borrower.', this)) return;
+    if (checkSlot(slots.Category, 'You must specify a category.', this)) return;
+
     const creditor = slots.Creditor.value.toLowerCase();
     const borrower = slots.Borrower.value.toLowerCase();
     const category = slots.Category.value;
@@ -456,7 +483,24 @@ function getCreditorString(borrowed, creditorName) {
   return result;
 }
 
-
+/**
+ * Sends an error message to the user and returns true
+ * iff the slot is empty or has no value.
+ * 
+ * @param {*} slot 
+ * @param {*} errMsg 
+ * @param {*} alexa 
+ */
+function checkSlot(slot, errMsg, alexa) {
+  console.log("checking slot: " + slot);
+  if (slot && slot.value) {
+    return false;
+  } else {
+    alexa.emit(':ask', errMsg);
+    console.error("Invalid slot: " + slot);
+    return true;
+  }
+}
 
 
 
